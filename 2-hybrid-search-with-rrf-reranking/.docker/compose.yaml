@@ -1,0 +1,88 @@
+name: m15-l2-hybrid-search-with-rrf-reranking
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: m15l2-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: m15l2-postgres
+    environment:
+      POSTGRES_USER: search
+      POSTGRES_PASSWORD: search
+      POSTGRES_DB: vectorsearch
+    volumes:
+      - ../../1-vector-search-with-embeddings/.docker/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U search -d vectorsearch"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  bm25-search-service:
+    build:
+      context: ../../0-inverted-index-and-bm25-from-scratch/bm25-search-service
+      dockerfile: Dockerfile
+    image: starciacademy/system-design-inverted-index-and-bm25-from-scratch-bm25-search-service:latest
+    container_name: m15l2-bm25-search-service
+    environment:
+      PORT: 3019
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  vector-search-service:
+    build:
+      context: ../../1-vector-search-with-embeddings/vector-search-service
+      dockerfile: Dockerfile
+    image: starciacademy/system-design-vector-search-with-embeddings-vector-search-service:latest
+    container_name: m15l2-vector-search-service
+    environment:
+      PORT: 3020
+      PG_HOST: postgres
+      PG_PORT: 5432
+      PG_USER: search
+      PG_PASSWORD: search
+      PG_DATABASE: vectorsearch
+      TRANSFORMERS_CACHE: /app/.cache
+    volumes:
+      - xenova-cache:/app/.cache
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  hybrid-search-service:
+    build:
+      context: ../hybrid-search-service
+      dockerfile: Dockerfile
+    image: starciacademy/system-design-hybrid-search-with-rrf-reranking-hybrid-search-service:latest
+    container_name: m15l2-hybrid-search-service
+    ports:
+      - "3021:3021"
+    environment:
+      PORT: 3021
+      BM25_BASE_URL: http://bm25-search-service:3019
+      VECTOR_BASE_URL: http://vector-search-service:3020
+      RRF_K: 60
+    depends_on:
+      bm25-search-service:
+        condition: service_started
+      vector-search-service:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  xenova-cache:
