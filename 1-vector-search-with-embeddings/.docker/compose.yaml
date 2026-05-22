@@ -1,0 +1,44 @@
+name: m15-l1-vector-search-with-embeddings
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: m15l1-postgres
+    environment:
+      POSTGRES_USER: search
+      POSTGRES_PASSWORD: search
+      POSTGRES_DB: vectorsearch
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U search -d vectorsearch"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  vector-search-service:
+    build:
+      context: ../vector-search-service
+      dockerfile: Dockerfile
+    image: starciacademy/system-design-vector-search-with-embeddings-vector-search-service:latest
+    container_name: m15l1-vector-search-service
+    ports:
+      - "3020:3020"
+    environment:
+      PORT: 3020
+      PG_HOST: postgres
+      PG_PORT: 5432
+      PG_USER: search
+      PG_PASSWORD: search
+      PG_DATABASE: vectorsearch
+      TRANSFORMERS_CACHE: /app/.cache
+    volumes:
+      - xenova-cache:/app/.cache
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  xenova-cache:
