@@ -18,9 +18,6 @@ services:
     restart: unless-stopped
 
   vector-search-service:
-    build:
-      context: ../vector-search-service
-      dockerfile: Dockerfile
     image: starciacademy/system-design-vector-search-with-embeddings-vector-search-service:latest
     container_name: m15l1-vector-search-service
     ports:

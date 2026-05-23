@@ -13,9 +13,6 @@ services:
     restart: unless-stopped
 
   bm25-search-service:
-    build:
-      context: ../bm25-search-service
-      dockerfile: Dockerfile
     image: starciacademy/system-design-inverted-index-and-bm25-from-scratch-bm25-search-service:latest
     container_name: m15l0-bm25-search-service
     ports:

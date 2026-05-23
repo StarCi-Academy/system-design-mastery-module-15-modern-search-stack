@@ -29,9 +29,6 @@ services:
     restart: unless-stopped
 
   bm25-search-service:
-    build:
-      context: ../../0-inverted-index-and-bm25-from-scratch/bm25-search-service
-      dockerfile: Dockerfile
     image: starciacademy/system-design-inverted-index-and-bm25-from-scratch-bm25-search-service:latest
     container_name: m15l2-bm25-search-service
     environment:
@@ -44,9 +41,6 @@ services:
     restart: unless-stopped
 
   vector-search-service:
-    build:
-      context: ../../1-vector-search-with-embeddings/vector-search-service
-      dockerfile: Dockerfile
     image: starciacademy/system-design-vector-search-with-embeddings-vector-search-service:latest
     container_name: m15l2-vector-search-service
     environment:
@@ -65,9 +59,6 @@ services:
     restart: unless-stopped
 
   hybrid-search-service:
-    build:
-      context: ../hybrid-search-service
-      dockerfile: Dockerfile
     image: starciacademy/system-design-hybrid-search-with-rrf-reranking-hybrid-search-service:latest
     container_name: m15l2-hybrid-search-service
     ports:
